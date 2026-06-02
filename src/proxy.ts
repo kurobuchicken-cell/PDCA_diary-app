@@ -2,17 +2,11 @@
 // ログインしていない人を /login に送り返し、ログイン済みなら /login に来たら
 // ホームへ戻す。これでアプリ全体が「家族だけ」に守られる。
 
-import { auth, signOut } from "@/auth";
+import { auth } from "@/auth";
 
-export default auth(async (req) => {
+export default auth((req) => {
   const isLoggedIn = !!req.auth;
   const isLoginPage = req.nextUrl.pathname === "/login";
-
-  // トークン更新に失敗した場合（invalid_grant など）はサインアウトしてログインへ
-  if (req.auth?.error === "RefreshAccessTokenError") {
-    await signOut({ redirect: false });
-    return Response.redirect(new URL("/login", req.nextUrl.origin));
-  }
 
   if (!isLoggedIn && !isLoginPage) {
     return Response.redirect(new URL("/login", req.nextUrl.origin));
