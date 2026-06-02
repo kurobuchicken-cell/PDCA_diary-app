@@ -8,6 +8,8 @@ declare module "next-auth" {
   interface Session {
     /** Googleのアクセストークン（ドライブAPI呼び出しに使う） */
     accessToken?: string;
+    /** トークン更新エラー時にセットされるフラグ（middleware がサインアウトに使う） */
+    error?: string;
   }
 }
 

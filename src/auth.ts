@@ -43,7 +43,9 @@ async function refreshAccessToken(token: JWT): Promise<JWT> {
     return token;
   } catch (e) {
     console.error("アクセストークン更新失敗:", e);
-    return token;
+    // invalid_grant などトークン無効エラーは error フラグを立てて返す。
+    // middleware がこのフラグを見てサインアウトへ誘導する。
+    return { ...token, error: "RefreshAccessTokenError" };
   }
 }
 
@@ -93,6 +95,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     // クライアント/サーバーから使えるよう、セッションにアクセストークンを載せる
     async session({ session, token }) {
       session.accessToken = token.accessToken;
+      // トークン更新エラー時はセッションにフラグを渡す（middleware でサインアウト）
+      if (token.error) session.error = token.error as string;
       return session;
     },
   },
