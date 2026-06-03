@@ -31,7 +31,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           scope:
             "openid email profile https://www.googleapis.com/auth/drive.file",
           access_type: "offline",
-          prompt: "consent",
+          // "login" でログイン済みでもパスワード入力を強制する
+          prompt: "login consent",
         },
       },
     }),
