@@ -7,6 +7,7 @@
 // 両方OK → 通す。どちらか欠けていれば適切なページへリダイレクト。
 
 import { auth } from "@/auth";
+import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 const PIN_COOKIE = "pin_verified";
@@ -21,18 +22,20 @@ export default auth((req: NextRequest & { auth: unknown }) => {
 
   // 未ログイン → ログイン画面へ（pin_verified クッキーも同時に削除）
   if (!isLoggedIn) {
-    const dest = isLoginPage ? null : new URL("/login", req.nextUrl.origin);
-    const res = dest
-      ? Response.redirect(dest)
-      : new Response(null, { status: 200 });
-    // セッションが切れたら PIN クッキーも無効化する
-    if (isPinVerified) {
-      res.headers.set(
-        "Set-Cookie",
-        "pin_verified=; Max-Age=0; Path=/; HttpOnly; SameSite=Lax"
-      );
+    if (isLoginPage) {
+      // ログイン画面はそのまま表示。pin_verified が残っていれば削除する
+      if (isPinVerified) {
+        const res = NextResponse.next();
+        res.cookies.set("pin_verified", "", { maxAge: 0, path: "/" });
+        return res;
+      }
+      return; // PIN クッキー不要ならそのまま通す
     }
-    if (!dest) return; // ログイン画面はそのまま表示
+    // 保護ページ → /login へリダイレクト。同時に PIN クッキーを削除する
+    const res = NextResponse.redirect(new URL("/login", req.nextUrl.origin));
+    if (isPinVerified) {
+      res.cookies.set("pin_verified", "", { maxAge: 0, path: "/" });
+    }
     return res;
   }
 
