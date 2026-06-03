@@ -25,9 +25,10 @@ export async function GET(req: Request) {
 
   const { parent, son } = recipients();
   const subject = "【PDCA日記】今日の日記がまだです";
-  const message = "今日の日記がまだです。書いて1日を振り返ろう！🏃";
-  await sendMail(son, subject, message);
-  await sendMail(parent, subject, message);
+  const sonMessage = "今日の日記がまだです。書いて1日を振り返ろう！🏃\nhttps://pdca-diary-app.vercel.app/write";
+  const parentMessage = "今日の日記がまだです。書くよう声をかけてみてください！🏃\nhttps://pdca-diary-app.vercel.app";
+  await sendMail(son, subject, sonMessage);
+  await sendMail(parent, subject, parentMessage);
 
   return Response.json({ sent: true, to: ["son", "parent"] });
 }

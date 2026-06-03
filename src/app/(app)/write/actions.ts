@@ -39,7 +39,7 @@ export async function saveDiaryAction(
     await sendMail(
       parent,
       "【PDCA日記】今日の日記を書きました",
-      `${formatJaDate(dateKey)}の日記を書きました📓\n\nアプリで内容を確認できます。`
+      `${formatJaDate(dateKey)}の日記を書きました📓\n\nアプリで内容を確認できます。\nhttps://pdca-diary-app.vercel.app/log`
     );
   }
 
