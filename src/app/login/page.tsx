@@ -2,10 +2,12 @@
 // signIn はサーバー側で実行する（"use server"）。秘密情報を扱うため安全。
 
 import { signIn } from "@/auth";
+import SafariGuard from "./SafariGuard";
 
 export default function LoginPage() {
   return (
     <main className="flex min-h-dvh flex-col items-center justify-center gap-8 px-6">
+      <SafariGuard />
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src="/hero.png"
