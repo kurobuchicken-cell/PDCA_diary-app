@@ -36,7 +36,7 @@ export async function addReactionAction(
   await sendMail(
     son,
     "【PDCA日記】親からの返信があります",
-    `過去ログに親からのリアクション・コメントが届きました。\n\nアプリで確認してみよう！`
+    `過去ログに親からのリアクション・コメントが届きました。\n\nアプリで確認してみよう！\nhttps://pdca-diary-app.vercel.app/log`
   );
 
   // 過去ログのキャッシュを無効化
