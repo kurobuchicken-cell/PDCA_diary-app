@@ -5,6 +5,7 @@
 // これはサーバーコンポーネントなので、auth() でログイン情報を安全に取得できる。
 
 import { auth, signOut } from "@/auth";
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import BottomNav from "@/components/BottomNav";
 
@@ -27,6 +28,8 @@ export default async function AppLayout({
           <form
             action={async () => {
               "use server";
+              // ログアウト時に PIN クッキーをサーバー側で確実に削除する
+              (await cookies()).delete("pin_verified");
               await signOut({ redirectTo: "/login" });
             }}
           >
