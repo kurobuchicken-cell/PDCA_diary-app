@@ -1,22 +1,47 @@
-// proxy（旧middleware）＝全リクエストの「入口の門番」。Next 16の新名称。
-// ログインしていない人を /login に送り返し、ログイン済みなら /login に来たら
-// ホームへ戻す。これでアプリ全体が「家族だけ」に守られる。
+// proxy（旧middleware）＝全リクエストの「入口の門番」。
+//
+// 認証の2段階：
+//  1. Googleログイン済みか（Auth.jsのセッション）
+//  2. PINコードを入力済みか（pin_verified Cookie）
+//
+// 両方OK → 通す。どちらか欠けていれば適切なページへリダイレクト。
 
 import { auth } from "@/auth";
+import type { NextRequest } from "next/server";
 
-export default auth((req) => {
+const PIN_COOKIE = "pin_verified";
+
+export default auth((req: NextRequest & { auth: unknown }) => {
+  const { pathname } = req.nextUrl;
   const isLoggedIn = !!req.auth;
-  const isLoginPage = req.nextUrl.pathname === "/login";
+  const isPinVerified = req.cookies.get(PIN_COOKIE)?.value === "1";
 
+  const isLoginPage = pathname === "/login";
+  const isPinPage = pathname === "/pin";
+
+  // 未ログイン → ログイン画面へ
   if (!isLoggedIn && !isLoginPage) {
     return Response.redirect(new URL("/login", req.nextUrl.origin));
   }
+
+  // ログイン済みでログイン画面 → PIN画面へ（PINが通れば / へ）
   if (isLoggedIn && isLoginPage) {
+    return Response.redirect(
+      new URL(isPinVerified ? "/" : "/pin", req.nextUrl.origin)
+    );
+  }
+
+  // ログイン済みでPIN未入力 → PIN画面へ（PIN画面自体は除外）
+  if (isLoggedIn && !isPinVerified && !isPinPage) {
+    return Response.redirect(new URL("/pin", req.nextUrl.origin));
+  }
+
+  // ログイン済みでPIN入力済み、かつPIN画面にいる → ホームへ
+  if (isLoggedIn && isPinVerified && isPinPage) {
     return Response.redirect(new URL("/", req.nextUrl.origin));
   }
 });
 
-// 門番を通す対象。API・静的ファイル・画像・faviconは対象外（除外）。
 export const config = {
   matcher: ["/((?!api|_next/static|_next/image|favicon.ico).*)"],
 };
