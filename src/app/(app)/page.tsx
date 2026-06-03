@@ -3,15 +3,37 @@
 // データ取得が await で書けるのがサーバーコンポーネントの良いところ。
 
 import Link from "next/link";
-import { getDiaries } from "@/lib/sheets";
+import { cookies } from "next/headers";
+import { getDiaries, getAllReactions } from "@/lib/sheets";
 import { computeStreak, findByDate } from "@/lib/diary";
 import { formatJaDate, todayKey } from "@/lib/date";
+import { auth } from "@/auth";
+
+function isSonEmail(email: string | null | undefined): boolean {
+  const sonEmail = process.env.NOTIFY_SON_EMAIL?.toLowerCase();
+  return !!email && !!sonEmail && email.toLowerCase() === sonEmail;
+}
 
 export default async function HomePage() {
-  const diaries = await getDiaries();
+  const [session, diaries, reactions, jar] = await Promise.all([
+    auth(),
+    getDiaries(),
+    getAllReactions(),
+    cookies(),
+  ]);
+
   const today = findByDate(diaries, todayKey());
   const streak = computeStreak(diaries);
   const latest = diaries[0] ?? null;
+
+  // 子アカウントのとき、未読リアクションがあるかチェックする
+  const isSon = isSonEmail(session?.user?.email);
+  const lastSeen = jar.get("reactions_last_seen")?.value ?? "";
+  const hasUnread =
+    isSon &&
+    reactions.some(
+      (r) => !lastSeen || r.createdAt > lastSeen
+    );
 
   return (
     <main className="flex flex-col gap-5">
@@ -19,6 +41,20 @@ export default async function HomePage() {
         <p className="text-sm text-slate-500">{formatJaDate(todayKey())}</p>
         <h1 className="text-2xl font-bold">陸上PDCA日記</h1>
       </header>
+
+      {/* 親からの未読リアクション通知 */}
+      {hasUnread && (
+        <Link
+          href="/log"
+          className="flex items-center gap-3 rounded-2xl bg-blue-50 border border-blue-200 p-4 text-blue-700"
+        >
+          <span className="text-2xl">💬</span>
+          <div>
+            <p className="font-bold text-sm">過去ログに親からの返信があります</p>
+            <p className="text-xs opacity-75">タップして確認する</p>
+          </div>
+        </Link>
+      )}
 
       {/* 連続記録カウント（6.1） */}
       <section className="flex items-center gap-3 rounded-2xl bg-gradient-to-r from-orange-500 to-amber-400 p-5 text-white shadow">

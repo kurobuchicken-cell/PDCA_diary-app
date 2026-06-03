@@ -5,6 +5,8 @@
 
 import { auth } from "@/auth";
 import { addReaction } from "@/lib/sheets";
+import { sendMail, recipients } from "@/lib/mail";
+import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
 
 function isParent(email: string | null | undefined): boolean {
@@ -29,6 +31,25 @@ export async function addReactionAction(
     comment,
   });
 
+  // 子にメールで通知する
+  const { son } = recipients();
+  await sendMail(
+    son,
+    "【PDCA日記】親からの返信があります",
+    `過去ログに親からのリアクション・コメントが届きました。\n\nアプリで確認してみよう！`
+  );
+
   // 過去ログのキャッシュを無効化
   revalidatePath("/log");
+}
+
+/** 子が過去ログを見たときに呼ぶ。reactions_last_seen クッキーを現在時刻に更新する。 */
+export async function markReactionsSeenAction(): Promise<void> {
+  const jar = await cookies();
+  jar.set("reactions_last_seen", new Date().toISOString(), {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    path: "/",
+  });
 }

@@ -13,6 +13,7 @@ import { formatJaDate } from "@/lib/date";
 import type { Diary } from "@/lib/types";
 import LogSearch from "./LogSearch";
 import DiaryCard from "./DiaryCard";
+import MarkReactionsSeen from "./MarkReactionsSeen";
 
 function isParentEmail(email: string | null | undefined): boolean {
   const parentEmail = process.env.NOTIFY_PARENT_EMAIL?.toLowerCase();
@@ -50,6 +51,8 @@ export default async function LogPage({
 
   return (
     <main className="flex flex-col gap-4">
+      {/* 子が過去ログを開いたとき、未読リアクションを既読にする */}
+      {!isParent && <MarkReactionsSeen />}
       <header>
         <h1 className="text-2xl font-bold">過去ログ</h1>
         <p className="mt-1 text-xs text-slate-400">

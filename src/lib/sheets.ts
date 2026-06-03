@@ -257,6 +257,17 @@ async function ensureReactionsHeaders(): Promise<void> {
   }
 }
 
+/** 全リアクションを取得（ホーム画面の未読バッジ用） */
+export async function getAllReactions(): Promise<Reaction[]> {
+  const sheets = getSheetsClient();
+  const res = await sheets.spreadsheets.values.get({
+    spreadsheetId: spreadsheetId(),
+    range: `${REACTIONS_SHEET}!A2:F`,
+  });
+  const rows = res.data.values ?? [];
+  return rows.filter((r) => r[0]).map(rowToReaction);
+}
+
 /** 指定日記IDに対するリアクションを全件取得（新しい順） */
 export async function getReactionsByDiaryId(
   diaryId: string
