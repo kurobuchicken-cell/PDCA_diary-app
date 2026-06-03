@@ -9,6 +9,7 @@ import { useState, useEffect } from "react";
 import type { Diary, Reaction } from "@/lib/types";
 import VideoPlayer from "@/components/VideoPlayer";
 import ReactionForm from "./ReactionForm";
+import { markReactionsSeenAction } from "./actions";
 
 const PDCA_LABELS: { key: keyof Diary; badge: string; color: string }[] = [
   { key: "plan", badge: "P", color: "bg-blue-500" },
@@ -57,7 +58,13 @@ export default function DiaryCard({
     <article className="rounded-2xl border border-slate-200 bg-white overflow-hidden">
       {/* ヘッダー行（常に表示） */}
       <button
-        onClick={() => setOpen((v) => !v)}
+        onClick={() => {
+          // 未読のあるカードを開いたとき、その場で既読にする
+          if (!open && hasUnread) {
+            markReactionsSeenAction().catch(() => {});
+          }
+          setOpen((v) => !v);
+        }}
         className="w-full text-left px-4 py-3 flex items-center gap-3 active:bg-slate-50"
       >
         {/* 日付 */}
