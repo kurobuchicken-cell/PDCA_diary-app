@@ -11,11 +11,20 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 const PIN_COOKIE = "pin_verified";
+const PIN_EMAIL_COOKIE = "pin_verified_email";
 
-export default auth((req: NextRequest & { auth: unknown }) => {
+export default auth((req: NextRequest & { auth: { user?: { email?: string | null } } | null }) => {
   const { pathname } = req.nextUrl;
   const isLoggedIn = !!req.auth;
-  const isPinVerified = req.cookies.get(PIN_COOKIE)?.value === "1";
+
+  // PIN クッキーが「1」かつ、PIN認証時のメールが現在のセッションと一致するか確認する。
+  // 別アカウントが同一ブラウザでログインしてもアカウント切り替わりを防ぐ。
+  const sessionEmail = req.auth?.user?.email?.toLowerCase() ?? "";
+  const pinVerifiedEmail = req.cookies.get(PIN_EMAIL_COOKIE)?.value ?? "";
+  const isPinVerified =
+    req.cookies.get(PIN_COOKIE)?.value === "1" &&
+    !!pinVerifiedEmail &&
+    pinVerifiedEmail === sessionEmail;
 
   const isLoginPage = pathname === "/login";
   const isPinPage = pathname === "/pin";
@@ -23,19 +32,19 @@ export default auth((req: NextRequest & { auth: unknown }) => {
   // 未ログイン → ログイン画面へ（pin_verified クッキーも同時に削除）
   if (!isLoggedIn) {
     if (isLoginPage) {
-      // ログイン画面はそのまま表示。pin_verified が残っていれば削除する
-      if (isPinVerified) {
+      // ログイン画面はそのまま表示。PIN クッキーが残っていれば削除する
+      if (req.cookies.get(PIN_COOKIE)) {
         const res = NextResponse.next();
         res.cookies.set("pin_verified", "", { maxAge: 0, path: "/" });
+        res.cookies.set("pin_verified_email", "", { maxAge: 0, path: "/" });
         return res;
       }
       return; // PIN クッキー不要ならそのまま通す
     }
     // 保護ページ → /login へリダイレクト。同時に PIN クッキーを削除する
     const res = NextResponse.redirect(new URL("/login", req.nextUrl.origin));
-    if (isPinVerified) {
-      res.cookies.set("pin_verified", "", { maxAge: 0, path: "/" });
-    }
+    res.cookies.set("pin_verified", "", { maxAge: 0, path: "/" });
+    res.cookies.set("pin_verified_email", "", { maxAge: 0, path: "/" });
     return res;
   }
 

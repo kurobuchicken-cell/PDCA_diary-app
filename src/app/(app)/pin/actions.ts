@@ -26,14 +26,18 @@ export async function verifyPinAction(pin: string): Promise<{ ok: boolean; error
   if (!expected) return { ok: false, error: "このアカウントはPIN未設定です" };
   if (pin !== expected) return { ok: false, error: "PINが違います" };
 
-  // 正解 → HttpOnly Cookie を発行（ブラウザを閉じるまで有効）
+  // 正解 → PIN確認クッキーとメールアドレスクッキーを同時に発行する
+  // メールアドレスを一緒に保存することで、別アカウントが同一ブラウザでログインした場合に
+  // ミドルウェアが不一致を検出してPIN入力に戻せる（アカウント切り替わり防止）
   const jar = await cookies();
-  jar.set(COOKIE_NAME, "1", {
+  const cookieOpts = {
     httpOnly: true,
-    sameSite: "lax",
+    sameSite: "lax" as const,
     secure: process.env.NODE_ENV === "production",
     path: "/",
-  });
+  };
+  jar.set(COOKIE_NAME, "1", cookieOpts);
+  jar.set("pin_verified_email", session.user.email.toLowerCase(), cookieOpts);
 
   return { ok: true };
 }

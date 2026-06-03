@@ -29,7 +29,9 @@ export default async function AppLayout({
             action={async () => {
               "use server";
               // ログアウト時に PIN クッキーをサーバー側で確実に削除する
-              (await cookies()).delete("pin_verified");
+              const jar = await cookies();
+              jar.delete("pin_verified");
+              jar.delete("pin_verified_email");
               await signOut({ redirectTo: "/login" });
             }}
           >
