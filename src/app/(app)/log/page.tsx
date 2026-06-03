@@ -8,7 +8,8 @@
 // リアクション取得・追加はクライアント側で API を叩く（DiaryCard / ReactionForm）。
 
 import { auth } from "@/auth";
-import { getDiaries } from "@/lib/sheets";
+import { cookies } from "next/headers";
+import { getDiaries, getAllReactions } from "@/lib/sheets";
 import { formatJaDate } from "@/lib/date";
 import type { Diary } from "@/lib/types";
 import LogSearch from "./LogSearch";
@@ -37,10 +38,23 @@ export default async function LogPage({
   searchParams: Promise<{ q?: string; date?: string }>;
 }) {
   const { q, date } = await searchParams;
-  const session = await auth();
+  const [session, allDiaries, allReactions, jar] = await Promise.all([
+    auth(),
+    getDiaries(),
+    getAllReactions(),
+    cookies(),
+  ]);
   const isParent = isParentEmail(session?.user?.email);
 
-  const allDiaries = await getDiaries(); // 新しい順
+  // 子アカウントのとき、reactions_last_seen より新しいリアクションがある日記IDを求める
+  const lastSeen = jar.get("reactions_last_seen")?.value ?? "";
+  const unreadDiaryIds = isParent
+    ? new Set<string>()
+    : new Set(
+        allReactions
+          .filter((r) => !lastSeen || r.createdAt > lastSeen)
+          .map((r) => r.diaryId)
+      );
 
   // フィルタ適用
   const filtered = allDiaries.filter((d) => {
@@ -83,6 +97,7 @@ export default async function LogPage({
               diary={diary}
               isParent={isParent}
               dateLabel={formatJaDate(diary.date)}
+              hasUnread={unreadDiaryIds.has(diary.id)}
             />
           </li>
         ))}

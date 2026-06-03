@@ -21,10 +21,12 @@ export default function DiaryCard({
   diary,
   isParent,
   dateLabel,
+  hasUnread = false,
 }: {
   diary: Diary;
   isParent: boolean;
   dateLabel: string;
+  hasUnread?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   // null=未取得, Reaction[]=取得済み（展開時に fetch）
@@ -73,6 +75,11 @@ export default function DiaryCard({
 
         {/* バッジ群 */}
         <div className="flex items-center gap-1.5 shrink-0">
+          {hasUnread && (
+            <span className="rounded-full bg-blue-500 px-2 py-0.5 text-xs text-white font-medium">
+              💬 未読
+            </span>
+          )}
           {hasTimes && (
             <span className="rounded-full bg-blue-100 px-2 py-0.5 text-xs text-blue-600 font-medium">
               タイム
