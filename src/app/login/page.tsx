@@ -1,20 +1,20 @@
-// ログイン画面。Googleログインのボタンだけのシンプルな画面。
-// ボタンを押すと Google の認証へ進み、許可メールならアプリへ入れる。
-//
+// ログイン画面。ヒーロー画像＋Googleログインボタンのシンプルな画面。
 // signIn はサーバー側で実行する（"use server"）。秘密情報を扱うため安全。
 
+import Image from "next/image";
 import { signIn } from "@/auth";
 
 export default function LoginPage() {
   return (
     <main className="flex min-h-dvh flex-col items-center justify-center gap-8 px-6">
-      <div className="text-center">
-        <p className="text-5xl">🏃</p>
-        <h1 className="mt-3 text-2xl font-bold">陸上PDCA日記</h1>
-        <p className="mt-2 text-sm text-slate-500">
-          毎日の練習を記録して、振り返ろう。
-        </p>
-      </div>
+      <Image
+        src="/hero.png"
+        alt="なーいくん PDCAプロジェクト"
+        width={360}
+        height={270}
+        priority
+        className="w-full max-w-sm"
+      />
 
       <form
         action={async () => {

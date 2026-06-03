@@ -26,7 +26,8 @@ const HEADERS = [
   "time200",
   "createdAt",
   "inputSeconds",
-  "videoFileId", // K列：動画のDriveファイルID（Step 6で追加）
+  "videoFileId", // K列：動画のDriveファイルID
+  "restDay",     // L列：部活なし日フラグ（"1" = 部活なし）
 ] as const;
 
 /** スプレッドシート操作クライアントを作る（サービスアカウントで認証） */
@@ -60,6 +61,7 @@ function rowToDiary(row: string[]): Diary {
     createdAt,
     inputSeconds,
     videoFileId,
+    restDay,
   ] = row;
   return {
     id: id ?? "",
@@ -73,6 +75,7 @@ function rowToDiary(row: string[]): Diary {
     createdAt: createdAt ?? "",
     inputSeconds: Number(inputSeconds ?? 0),
     videoFileId: videoFileId || undefined,
+    restDay: restDay === "1",
   };
 }
 
@@ -90,6 +93,7 @@ function diaryToRow(d: Diary): string[] {
     d.createdAt,
     String(d.inputSeconds),
     d.videoFileId ?? "",
+    d.restDay ? "1" : "",
   ];
 }
 
@@ -98,7 +102,7 @@ export async function getDiaries(): Promise<Diary[]> {
   const sheets = getSheetsClient();
   const res = await sheets.spreadsheets.values.get({
     spreadsheetId: spreadsheetId(),
-    range: `${SHEET}!A2:K`, // 1行目はヘッダーなので2行目から
+    range: `${SHEET}!A2:L`, // 1行目はヘッダーなので2行目から
   });
   const rows = res.data.values ?? [];
   return rows
@@ -159,6 +163,7 @@ export async function upsertDiary(
     createdAt,
     inputSeconds,
     videoFileId: video || undefined,
+    restDay: input.restDay ?? false,
   };
   const row = diaryToRow(diary);
 
@@ -167,7 +172,7 @@ export async function upsertDiary(
     const rowNumber = foundIndex + 2;
     await sheets.spreadsheets.values.update({
       spreadsheetId: spreadsheetId(),
-      range: `${SHEET}!A${rowNumber}:K${rowNumber}`,
+      range: `${SHEET}!A${rowNumber}:L${rowNumber}`,
       valueInputOption: "RAW",
       requestBody: { values: [row] },
     });
@@ -175,7 +180,7 @@ export async function upsertDiary(
     // 追記
     await sheets.spreadsheets.values.append({
       spreadsheetId: spreadsheetId(),
-      range: `${SHEET}!A:K`,
+      range: `${SHEET}!A:L`,
       valueInputOption: "RAW",
       requestBody: { values: [row] },
     });
@@ -193,14 +198,14 @@ export async function ensureHeaders(): Promise<void> {
   const sheets = getSheetsClient();
   const res = await sheets.spreadsheets.values.get({
     spreadsheetId: spreadsheetId(),
-    range: `${SHEET}!A1:K1`,
+    range: `${SHEET}!A1:L1`,
   });
-  // 列数が HEADERS より少なければ（未設定 or 旧J列まで）ヘッダーを書き直して最新化する
+  // 列数が HEADERS より少なければ（未設定 or 旧列まで）ヘッダーを書き直して最新化する
   const cols = res.data.values?.[0]?.length ?? 0;
   if (cols < HEADERS.length) {
     await sheets.spreadsheets.values.update({
       spreadsheetId: spreadsheetId(),
-      range: `${SHEET}!A1:K1`,
+      range: `${SHEET}!A1:L1`,
       valueInputOption: "RAW",
       requestBody: { values: [HEADERS as unknown as string[]] },
     });

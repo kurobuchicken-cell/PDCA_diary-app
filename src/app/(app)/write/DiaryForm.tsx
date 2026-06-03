@@ -56,6 +56,7 @@ export default function DiaryForm({
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
+  const [restDay, setRestDay] = useState(initial?.restDay ?? false);
   const [form, setForm] = useState<Record<FieldKey, string>>({
     plan: initial?.plan ?? "",
     do: initial?.do ?? "",
@@ -89,7 +90,7 @@ export default function DiaryForm({
           setUploading(false);
         }
         await saveDiaryAction(
-          { ...form, time100, time200 },
+          { ...form, time100, time200, restDay },
           inputSeconds,
           todayKey(),
           videoFileId
@@ -112,8 +113,31 @@ export default function DiaryForm({
         </p>
       </header>
 
-      {/* PDCA 4ステップ */}
-      {STEPS.map((step) => (
+      {/* 部活なし日チェック */}
+      <label className="flex cursor-pointer items-center gap-3 rounded-2xl border border-slate-200 bg-white p-4">
+        <input
+          type="checkbox"
+          checked={restDay}
+          onChange={(e) => setRestDay(e.target.checked)}
+          className="h-5 w-5 accent-accent"
+        />
+        <div>
+          <p className="font-bold text-slate-700">今日は部活がない</p>
+          <p className="text-xs text-slate-400">
+            チェックすると連続記録を維持したまま休日として記録されます
+          </p>
+        </div>
+      </label>
+
+      {/* 部活なし選択時は PDCA フォームを非表示 */}
+      {restDay && (
+        <div className="rounded-2xl bg-slate-50 p-4 text-center text-sm text-slate-500">
+          🏖️ 今日はお休みとして記録します。連続記録は維持されます。
+        </div>
+      )}
+
+      {/* PDCA 4ステップ（部活なし日は非表示） */}
+      {!restDay && STEPS.map((step) => (
         <section key={step.key} className="flex flex-col gap-1.5">
           <label className="flex items-center gap-2">
             <span className="flex h-7 w-7 items-center justify-center rounded-full bg-accent text-sm font-bold text-white">
@@ -134,8 +158,8 @@ export default function DiaryForm({
         </section>
       ))}
 
-      {/* 任意：タイム記録 */}
-      <section className="rounded-2xl border border-dashed border-slate-300 p-4">
+      {/* 任意：タイム記録（部活なし日は非表示） */}
+      {!restDay && <section className="rounded-2xl border border-dashed border-slate-300 p-4">
         <h2 className="mb-3 text-sm font-bold text-slate-500">
           タイム記録（任意）
         </h2>
@@ -161,10 +185,10 @@ export default function DiaryForm({
             />
           </label>
         </div>
-      </section>
+      </section>}
 
-      {/* 任意：練習動画 */}
-      <section className="rounded-2xl border border-dashed border-slate-300 p-4">
+      {/* 任意：練習動画（部活なし日は非表示） */}
+      {!restDay && <section className="rounded-2xl border border-dashed border-slate-300 p-4">
         <h2 className="mb-3 text-sm font-bold text-slate-500">
           練習動画（任意）
         </h2>
@@ -190,7 +214,7 @@ export default function DiaryForm({
             選択中：{videoFile.name}
           </p>
         )}
-      </section>
+      </section>}
 
       {error && (
         <p className="rounded-xl bg-red-50 p-3 text-sm text-red-600">{error}</p>
