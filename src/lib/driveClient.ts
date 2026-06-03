@@ -21,6 +21,11 @@ async function getAccessToken(): Promise<string> {
 
 /** 再開可能アップロードで動画を1ファイル送る。戻り値はファイルID。 */
 async function resumableUpload(file: File, token: string): Promise<string> {
+  // 保存先フォルダID（環境変数で指定。未設定なら Drive のルートへ）
+  const folderId = process.env.NEXT_PUBLIC_DRIVE_FOLDER_ID;
+  const metadata: Record<string, unknown> = { name: file.name };
+  if (folderId) metadata.parents = [folderId];
+
   // ① アップロード開始を要求し、専用のアップロードURL(Location)を受け取る
   const initRes = await fetch(
     "https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable",
@@ -31,7 +36,7 @@ async function resumableUpload(file: File, token: string): Promise<string> {
         "Content-Type": "application/json",
         "X-Upload-Content-Type": file.type || "video/mp4",
       },
-      body: JSON.stringify({ name: file.name }),
+      body: JSON.stringify(metadata),
     }
   );
   if (!initRes.ok) throw new Error("アップロード開始に失敗しました");
