@@ -1,18 +1,15 @@
 // ログイン画面。ヒーロー画像＋Googleログインボタンのシンプルな画面。
 // signIn はサーバー側で実行する（"use server"）。秘密情報を扱うため安全。
 
-import Image from "next/image";
 import { signIn } from "@/auth";
 
 export default function LoginPage() {
   return (
     <main className="flex min-h-dvh flex-col items-center justify-center gap-8 px-6">
-      <Image
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
         src="/hero.png"
         alt="なーいくん PDCAプロジェクト"
-        width={360}
-        height={270}
-        priority
         className="w-full max-w-sm"
       />
 
