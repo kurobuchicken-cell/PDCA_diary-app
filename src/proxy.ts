@@ -19,9 +19,21 @@ export default auth((req: NextRequest & { auth: unknown }) => {
   const isLoginPage = pathname === "/login";
   const isPinPage = pathname === "/pin";
 
-  // 未ログイン → ログイン画面へ
-  if (!isLoggedIn && !isLoginPage) {
-    return Response.redirect(new URL("/login", req.nextUrl.origin));
+  // 未ログイン → ログイン画面へ（pin_verified クッキーも同時に削除）
+  if (!isLoggedIn) {
+    const dest = isLoginPage ? null : new URL("/login", req.nextUrl.origin);
+    const res = dest
+      ? Response.redirect(dest)
+      : new Response(null, { status: 200 });
+    // セッションが切れたら PIN クッキーも無効化する
+    if (isPinVerified) {
+      res.headers.set(
+        "Set-Cookie",
+        "pin_verified=; Max-Age=0; Path=/; HttpOnly; SameSite=Lax"
+      );
+    }
+    if (!dest) return; // ログイン画面はそのまま表示
+    return res;
   }
 
   // ログイン済みでログイン画面 → PIN画面へ（PINが通れば / へ）
