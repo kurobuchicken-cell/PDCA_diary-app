@@ -4,7 +4,7 @@
 // Google OAuth が disallowed_useragent エラーになる。
 // 内蔵ブラウザを検知したとき、x-safari-https:// スキームで Safari に誘導する。
 
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 
 function isInAppBrowser(): boolean {
   if (typeof window === "undefined") return false;
@@ -24,12 +24,15 @@ function isInAppBrowser(): boolean {
   return false;
 }
 
-export default function SafariGuard() {
-  const [blocked, setBlocked] = useState(false);
+// UA は実行中に変化しないため subscribe は何もしない（購読不要の外部値として扱う）
+const noopSubscribe = () => () => {};
 
-  useEffect(() => {
-    if (isInAppBrowser()) setBlocked(true);
-  }, []);
+export default function SafariGuard() {
+  const blocked = useSyncExternalStore(
+    noopSubscribe,
+    isInAppBrowser,
+    () => false // サーバー側は常に未ブロック（ハイドレーション不整合を防ぐ）
+  );
 
   if (!blocked) return null;
 
