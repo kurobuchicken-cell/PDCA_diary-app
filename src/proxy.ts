@@ -15,6 +15,13 @@ const PIN_EMAIL_COOKIE = "pin_verified_email";
 
 export default auth((req: NextRequest & { auth: { user?: { email?: string | null } } | null }) => {
   const { pathname } = req.nextUrl;
+
+  // 静的ファイル（画像・フォント等）は matcher 除外に加えてここでも早期リターンする。
+  // Vercel 本番では middleware-manifest が空になるケースがあり matcher が効かないため。
+  if (/\.(png|jpg|jpeg|gif|svg|webp|ico|woff2?)$/i.test(pathname)) {
+    return;
+  }
+
   const isLoggedIn = !!req.auth;
 
   // PIN クッキーが「1」かつ、PIN認証時のメールが現在のセッションと一致するか確認する。
