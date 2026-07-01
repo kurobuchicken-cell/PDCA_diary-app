@@ -8,12 +8,6 @@ export default function LoginPage() {
   return (
     <main className="flex min-h-dvh flex-col items-center justify-center gap-8 px-6">
       <SafariGuard />
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src="/hero.png"
-        alt="なーいくん PDCAプロジェクト"
-        className="w-full max-w-sm"
-      />
 
       <form
         action={async () => {

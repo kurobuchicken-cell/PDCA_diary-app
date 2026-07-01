@@ -42,6 +42,9 @@ export default async function HomePage() {
         <h1 className="text-2xl font-bold">陸上PDCA日記</h1>
       </header>
 
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src="/hero.png" alt="なーいくん PDCAプロジェクト" className="w-full rounded-2xl" />
+
       {/* 親からの未読リアクション通知 */}
       {hasUnread && (
         <Link
