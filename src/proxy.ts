@@ -19,7 +19,7 @@ export default auth((req: NextRequest & { auth: { user?: { email?: string | null
   // 静的ファイル（画像・フォント等）は matcher 除外に加えてここでも早期リターンする。
   // Vercel 本番では middleware-manifest が空になるケースがあり matcher が効かないため。
   if (/\.(png|jpg|jpeg|gif|svg|webp|ico|woff2?)$/i.test(pathname)) {
-    return;
+    return NextResponse.next();
   }
 
   const isLoggedIn = !!req.auth;
