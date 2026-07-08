@@ -19,10 +19,21 @@ function shareTargets(myEmail: string | null | undefined): string[] {
     .filter((e) => e.toLowerCase() !== me);
 }
 
-export default async function WritePage() {
+export default async function WritePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ date?: string }>;
+}) {
   const session = await auth();
-  const today = await getDiaryByDate(todayKey());
+  const { date } = await searchParams;
+  // ?date=YYYY-MM-DD が指定されていればその日、なければ今日
+  const dateKey = date ?? todayKey();
+  const diary = await getDiaryByDate(dateKey);
   return (
-    <DiaryForm initial={today} shareEmails={shareTargets(session?.user?.email)} />
+    <DiaryForm
+      initial={diary}
+      dateKey={dateKey}
+      shareEmails={shareTargets(session?.user?.email)}
+    />
   );
 }

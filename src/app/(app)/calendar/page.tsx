@@ -69,13 +69,16 @@ export default async function CalendarPage({
             if (!dateKey) return <div key={i} className="aspect-square" />;
             const hasEntry = entryDays.has(dateKey);
             const isToday = dateKey === today;
-            return (
-              <div
-                key={i}
-                className={`flex aspect-square items-center justify-center rounded-lg text-sm ${
-                  hasEntry ? "bg-accent font-bold text-white" : "text-slate-600"
-                } ${isToday ? "ring-2 ring-orange-300" : ""}`}
-              >
+            const className = `flex aspect-square items-center justify-center rounded-lg text-sm ${
+              hasEntry ? "bg-accent font-bold text-white" : "text-slate-600"
+            } ${isToday ? "ring-2 ring-orange-300" : ""}`;
+            // 記録済みの日はタップで編集ページへ
+            return hasEntry ? (
+              <Link key={i} href={`/write?date=${dateKey}`} className={className}>
+                {dayOfMonth(dateKey)}
+              </Link>
+            ) : (
+              <div key={i} className={className}>
                 {dayOfMonth(dateKey)}
               </div>
             );

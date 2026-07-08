@@ -16,6 +16,8 @@ export type Diary = {
   inputSeconds: number; // 入力にかかった秒数（3〜5分で完了の計測用）
   videoFileId?: string; // 紐づく動画のGoogleドライブ ファイルID（Step 6・無→未設定）
   restDay?: boolean; // 部活なし日フラグ（true なら連続記録を維持しつつ PDCA は省略）
+  wind100Direction?: "none" | "tail" | "head"; // 100m計測時の風向：無風/追い風/向かい風
+  wind100Speed?: number; // 100m計測時の風速 0.0〜2.0（m/s）
 };
 
 /** 日記の入力フォームの中身（id/createdAt等の自動項目を除いたもの） */
@@ -27,6 +29,8 @@ export type DiaryInput = {
   time100?: string;
   time200?: string;
   restDay?: boolean;
+  wind100Direction?: "none" | "tail" | "head";
+  wind100Speed?: number;
 };
 
 /** 親リアクション1件（DESIGN.md §2.4 reactions シート1行に対応） */

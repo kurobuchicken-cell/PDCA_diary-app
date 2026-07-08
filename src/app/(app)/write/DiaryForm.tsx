@@ -46,11 +46,18 @@ const STEPS = [
 
 type FieldKey = (typeof STEPS)[number]["key"];
 
+// 風速の選択肢（0.1〜2.0を0.1刻み）
+const WIND_SPEEDS = Array.from({ length: 20 }, (_, i) =>
+  ((i + 1) * 0.1).toFixed(1)
+);
+
 export default function DiaryForm({
   initial,
+  dateKey,
   shareEmails,
 }: {
   initial: Diary | null;
+  dateKey: string;
   shareEmails: string[];
 }) {
   const router = useRouter();
@@ -65,6 +72,12 @@ export default function DiaryForm({
   });
   const [time100, setTime100] = useState(initial?.time100 ?? "");
   const [time200, setTime200] = useState(initial?.time200 ?? "");
+  const [wind100Direction, setWind100Direction] = useState<"none" | "tail" | "head">(
+    initial?.wind100Direction ?? "none"
+  );
+  const [wind100Speed, setWind100Speed] = useState(
+    initial?.wind100Speed != null ? String(initial.wind100Speed.toFixed(1)) : "1.0"
+  );
 
   // 動画：選択中のファイル / 既に保存済みの動画ID / アップロード中表示 / エラー
   const [videoFile, setVideoFile] = useState<File | null>(null);
@@ -90,9 +103,17 @@ export default function DiaryForm({
           setUploading(false);
         }
         await saveDiaryAction(
-          { ...form, time100, time200, restDay },
+          {
+            ...form,
+            time100,
+            time200,
+            restDay,
+            wind100Direction,
+            wind100Speed:
+              wind100Direction === "none" ? 0 : Number(wind100Speed),
+          },
           inputSeconds,
-          todayKey(),
+          dateKey,
           videoFileId
         );
         router.push("/");
@@ -106,8 +127,10 @@ export default function DiaryForm({
   return (
     <main className="flex flex-col gap-5">
       <header>
-        <p className="text-sm text-slate-500">{formatJaDate(todayKey())}</p>
-        <h1 className="text-2xl font-bold">今日の日記を書く</h1>
+        <p className="text-sm text-slate-500">{formatJaDate(dateKey)}</p>
+        <h1 className="text-2xl font-bold">
+          {dateKey === todayKey() ? "今日の日記を書く" : "日記を修正する"}
+        </h1>
         <p className="mt-1 text-xs text-slate-400">
           全部書かなくてもOK。続けることが一番大事。
         </p>
@@ -159,33 +182,74 @@ export default function DiaryForm({
       ))}
 
       {/* 任意：タイム記録（部活なし日は非表示） */}
-      {!restDay && <section className="rounded-2xl border border-dashed border-slate-300 p-4">
-        <h2 className="mb-3 text-sm font-bold text-slate-500">
-          タイム記録（任意）
-        </h2>
-        <div className="flex gap-3">
-          <label className="flex flex-1 flex-col gap-1 text-sm">
-            100m（秒）
-            <input
-              value={time100}
-              onChange={(e) => setTime100(e.target.value)}
-              inputMode="decimal"
-              placeholder="13.45"
-              className="rounded-xl border border-slate-200 bg-white p-3 text-base outline-none focus:border-accent focus:ring-2 focus:ring-orange-200"
-            />
-          </label>
-          <label className="flex flex-1 flex-col gap-1 text-sm">
-            200m（秒）
-            <input
-              value={time200}
-              onChange={(e) => setTime200(e.target.value)}
-              inputMode="decimal"
-              placeholder="27.80"
-              className="rounded-xl border border-slate-200 bg-white p-3 text-base outline-none focus:border-accent focus:ring-2 focus:ring-orange-200"
-            />
-          </label>
-        </div>
-      </section>}
+      {!restDay && (
+        <section className="rounded-2xl border border-dashed border-slate-300 p-4">
+          <h2 className="mb-3 text-sm font-bold text-slate-500">
+            タイム記録（任意）
+          </h2>
+          <div className="flex flex-col gap-3">
+            {/* 100m タイム入力 */}
+            <label className="flex flex-col gap-1 text-sm">
+              100m（秒）
+              <input
+                value={time100}
+                onChange={(e) => setTime100(e.target.value)}
+                inputMode="decimal"
+                placeholder="13.45"
+                className="rounded-xl border border-slate-200 bg-white p-3 text-base outline-none focus:border-accent focus:ring-2 focus:ring-orange-200"
+              />
+            </label>
+            {/* 100m 風向・風速（タイムが入力されている時に表示） */}
+            {time100 && (
+              <div className="flex gap-2">
+                {/* 風向選択 */}
+                <label className="flex flex-1 flex-col gap-1 text-sm">
+                  風向
+                  <select
+                    value={wind100Direction}
+                    onChange={(e) =>
+                      setWind100Direction(e.target.value as "none" | "tail" | "head")
+                    }
+                    className="rounded-xl border border-slate-200 bg-white p-3 text-base outline-none focus:border-accent focus:ring-2 focus:ring-orange-200"
+                  >
+                    <option value="none">無風</option>
+                    <option value="tail">追い風</option>
+                    <option value="head">向かい風</option>
+                  </select>
+                </label>
+                {/* 風速選択（無風以外の時のみ） */}
+                {wind100Direction !== "none" && (
+                  <label className="flex flex-1 flex-col gap-1 text-sm">
+                    風速（m/s）
+                    <select
+                      value={wind100Speed}
+                      onChange={(e) => setWind100Speed(e.target.value)}
+                      className="rounded-xl border border-slate-200 bg-white p-3 text-base outline-none focus:border-accent focus:ring-2 focus:ring-orange-200"
+                    >
+                      {WIND_SPEEDS.map((s) => (
+                        <option key={s} value={s}>
+                          {s}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                )}
+              </div>
+            )}
+            {/* 200m タイム入力 */}
+            <label className="flex flex-col gap-1 text-sm">
+              200m（秒）
+              <input
+                value={time200}
+                onChange={(e) => setTime200(e.target.value)}
+                inputMode="decimal"
+                placeholder="27.80"
+                className="rounded-xl border border-slate-200 bg-white p-3 text-base outline-none focus:border-accent focus:ring-2 focus:ring-orange-200"
+              />
+            </label>
+          </div>
+        </section>
+      )}
 
       {/* 任意：練習動画（部活なし日は非表示） */}
       {!restDay && <section className="rounded-2xl border border-dashed border-slate-300 p-4">

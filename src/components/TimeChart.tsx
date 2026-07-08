@@ -9,27 +9,27 @@ export type Point = { date: string; value: number };
 
 type Props = {
   series100: Point[];
-  series200: Point[];
+  seriesAdjusted: Point[]; // 100m無風換算タイム
 };
 
 // 描画領域のサイズ（viewBox基準。実寸は親に合わせて伸縮）
 const W = 320;
-const H = 200;
+const H = 210;
 const PAD_L = 34; // 左の目盛り用
 const PAD_R = 10;
-const PAD_T = 12;
+const PAD_T = 20; // 点の上に数値ラベルを出すため余白を広めに
 const PAD_B = 24; // 下の日付用
 const CHART_W = W - PAD_L - PAD_R;
 const CHART_H = H - PAD_T - PAD_B;
 
-export default function TimeChart({ series100, series200 }: Props) {
+export default function TimeChart({ series100, seriesAdjusted }: Props) {
   // x軸＝両系列の日付をまとめて昇順に並べたもの
   const dates = Array.from(
-    new Set([...series100, ...series200].map((p) => p.date))
+    new Set([...series100, ...seriesAdjusted].map((p) => p.date))
   ).sort();
 
   // y軸の範囲（両系列の最小・最大。少し余白を持たせる）
-  const values = [...series100, ...series200].map((p) => p.value);
+  const values = [...series100, ...seriesAdjusted].map((p) => p.value);
   const minV = Math.min(...values);
   const maxV = Math.max(...values);
   const pad = (maxV - minV) * 0.15 || 1; // 全部同じ値でも潰れないように
@@ -56,6 +56,14 @@ export default function TimeChart({ series100, series200 }: Props) {
   // x日付ラベル（多すぎないよう最大5個に間引く）
   const labelStep = Math.max(1, Math.ceil(dates.length / 5));
   const xLabels = dates.filter((_, i) => i % labelStep === 0);
+
+  // 点に付けるテキストの横揃えを端に合わせてはみ出し防止
+  const anchorFor = (date: string): "start" | "middle" | "end" => {
+    const x = xFor(date);
+    if (x < PAD_L + 18) return "start";
+    if (x > W - PAD_R - 18) return "end";
+    return "middle";
+  };
 
   return (
     <svg viewBox={`0 0 ${W} ${H}`} className="h-auto w-full">
@@ -96,17 +104,30 @@ export default function TimeChart({ series100, series200 }: Props) {
         );
       })}
 
-      {/* 200m（青） */}
-      {series200.length > 0 && (
+      {/* 無風換算タイム（緑） */}
+      {seriesAdjusted.length > 0 && (
         <polyline
-          points={toPolyline(series200)}
+          points={toPolyline(seriesAdjusted)}
           fill="none"
-          stroke="#3b82f6"
+          stroke="#22c55e"
           strokeWidth={2}
+          strokeDasharray="5 3"
         />
       )}
-      {series200.map((p) => (
-        <circle key={`b${p.date}`} cx={xFor(p.date)} cy={yFor(p.value)} r={3} fill="#3b82f6" />
+      {seriesAdjusted.map((p) => (
+        <g key={`adj${p.date}`}>
+          <circle cx={xFor(p.date)} cy={yFor(p.value)} r={3} fill="#22c55e" />
+          {/* 点の下に数値（series100と重ならないよう下側に配置） */}
+          <text
+            x={xFor(p.date)}
+            y={yFor(p.value) + 12}
+            fontSize={8}
+            fill="#22c55e"
+            textAnchor={anchorFor(p.date)}
+          >
+            {p.value.toFixed(2)}
+          </text>
+        </g>
       ))}
 
       {/* 100m（オレンジ） */}
@@ -119,7 +140,19 @@ export default function TimeChart({ series100, series200 }: Props) {
         />
       )}
       {series100.map((p) => (
-        <circle key={`o${p.date}`} cx={xFor(p.date)} cy={yFor(p.value)} r={3} fill="#f97316" />
+        <g key={`o${p.date}`}>
+          <circle cx={xFor(p.date)} cy={yFor(p.value)} r={3} fill="#f97316" />
+          {/* 点の上に数値 */}
+          <text
+            x={xFor(p.date)}
+            y={yFor(p.value) - 6}
+            fontSize={8}
+            fill="#f97316"
+            textAnchor={anchorFor(p.date)}
+          >
+            {p.value.toFixed(2)}
+          </text>
+        </g>
       ))}
     </svg>
   );
